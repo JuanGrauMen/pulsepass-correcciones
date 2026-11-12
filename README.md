@@ -95,6 +95,47 @@ La base de datos indicada debe existir y las credenciales deben tener permisos s
 
 La configuración de la aplicación establece `spring.jpa.hibernate.ddl-auto=validate`: Flyway crea/evoluciona el esquema y Hibernate valida su correspondencia con las entidades, sin generar ni modificar tablas.
 
+## Datos de desarrollo
+
+El registro público solo crea usuarios `USER`, así que no hay forma de obtener un `STAFF` o un `ADMIN` por HTTP. Para desarrollar y para las pruebas manuales existe una semilla que se activa **solo** con el perfil `dev`. No es una migración de Flyway, por lo que nunca se aplica en producción.
+
+```bash
+export PULSEPASS_DEV_SEED_PASSWORD='una-clave-de-al-menos-12-caracteres'
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+```powershell
+$env:PULSEPASS_DEV_SEED_PASSWORD = "una-clave-de-al-menos-12-caracteres"
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+`PULSEPASS_DEV_SEED_PASSWORD` es obligatoria y no tiene valor por defecto a propósito: si falta, la aplicación no arranca y lo explica. En la base de datos solo se guarda el hash BCrypt, y el repositorio no contiene ninguna contraseña.
+
+| Cuenta | Correo | Usuario | Rol |
+|---|---|---|---|
+| Administrador | `admin@example.test` | `admin_dev` | `ADMIN` |
+| Operador | `staff@example.test` | `staff_dev` | `STAFF` |
+| Cuenta inactiva | `inactive@example.test` | `inactive_dev` | `USER`, desactivada: no puede iniciar sesión |
+
+Los usuarios normales (por ejemplo USER_A y USER_B de las pruebas E2E) se registran por la API con `POST /api/users`.
+
+| Sede | Capacidad | Estado | Para qué sirve |
+|---|---|---|---|
+| `VEN-SMR-01` Marina Convention Center | 5000 | activa | Eventos con cupo amplio. |
+| `VEN-SMR-02` Sala Íntima Santa Marta | 3 | activa | Llenar el cupo y probar `SOLD_OUT`. |
+| `VEN-OFF-01` Auditorio Cerrado | 200 | inactiva | Probar que no se puede usar una sede inactiva. |
+
+| Evento | Estado | Notas |
+|---|---|---|
+| `CMF-2026` | `PUBLISHED` | Sede `VEN-SMR-01`, artista Caribbean Sound. |
+| `EV-ADULT-01` | `PUBLISHED` | Edad mínima 18. |
+| `EV-TINY-01` | `PUBLISHED` | Sede de capacidad 3. |
+| `EV-DRAFT-01` | `DRAFT` | Visible solo para `STAFF` y `ADMIN`. |
+| `EV-TOPUBLISH-01` | `DRAFT` | Para probar `PATCH /publish`. |
+| `EV-CANCELLED-01` | `CANCELLED` | Para probar la compra sobre un evento cancelado. |
+
+La semilla es idempotente: solo crea lo que falta. Las fechas se calculan desde la primera ejecución y quedan a más de 180 días; si conservas la base de datos durante mucho tiempo, recréala. La siembra ocurre antes de que el servidor acepte peticiones, de modo que las cuentas existen desde la primera solicitud.
+
 ## Migraciones
 
 Flyway es el único responsable del esquema. Las migraciones están en `src/main/resources/db/migration` y se aplican en orden de versión:
