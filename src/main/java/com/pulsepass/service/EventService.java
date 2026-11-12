@@ -19,4 +19,6 @@ public interface EventService {
     EventResponse addArtist(String eventCode, Long artistId);
 
     List<EventSummaryResponse> findByArtist(String stageName);
+
+    List<EventSummaryResponse> findPublishedByArtist(String stageName);
 }

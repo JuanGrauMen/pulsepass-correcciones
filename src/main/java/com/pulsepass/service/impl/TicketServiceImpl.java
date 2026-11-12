@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +53,7 @@ public class TicketServiceImpl implements TicketService {
         if (event.getStatus() != EventStatus.PUBLISHED) {
             throw new BusinessRuleException("Tickets can only be purchased for PUBLISHED events.");
         }
-        if (event.getEventDate() == null || !event.getEventDate().isAfter(LocalDate.now())) {
+        if (event.getEventDate() == null || !event.getEventDate().isAfter(LocalDateTime.now())) {
             throw new BusinessRuleException("Cannot purchase a ticket for an event that has already occurred.");
         }
         validateAge(user, event);
@@ -106,7 +107,7 @@ public class TicketServiceImpl implements TicketService {
         if (ticket.getStatus() != TicketStatus.PAID) {
             throw new BusinessRuleException("Only PAID tickets can be cancelled.");
         }
-        if (ticket.getEvent().getEventDate().isBefore(LocalDate.now())) {
+        if (ticket.getEvent().getEventDate().isBefore(LocalDateTime.now())) {
             throw new BusinessRuleException("Ticket cannot be cancelled after the event date.");
         }
         ticket.setStatus(TicketStatus.CANCELLED);
@@ -129,7 +130,7 @@ public class TicketServiceImpl implements TicketService {
         if (user.getProfile() == null || user.getProfile().getBirthDate() == null) {
             throw new BusinessRuleException("User birth date is required for this event.");
         }
-        int age = Period.between(user.getProfile().getBirthDate(), event.getEventDate()).getYears();
+        int age = Period.between(user.getProfile().getBirthDate(), event.getEventDate().toLocalDate()).getYears();
         if (age < event.getMinimumAge()) {
             throw new BusinessRuleException("User does not meet minimum age.");
         }

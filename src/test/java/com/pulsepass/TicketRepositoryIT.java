@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -51,7 +52,7 @@ class TicketRepositoryIT {
         Event event = createEvent(
                 "TICKET-EVENT-01",
                 venue,
-                LocalDate.now().plusDays(30)
+                LocalDateTime.now().plusDays(30)
         );
 
         Ticket paidTicket = createTicket(
@@ -90,7 +91,7 @@ class TicketRepositoryIT {
         Event event = createEvent(
                 "TICKET-EVENT-02",
                 venue,
-                LocalDate.now().plusDays(40)
+                LocalDateTime.now().plusDays(40)
         );
 
         ticketRepository.save(
@@ -139,13 +140,13 @@ class TicketRepositoryIT {
         Event laterEvent = createEvent(
                 "TICKET-EVENT-LATER",
                 venue,
-                LocalDate.now().plusDays(60)
+                LocalDateTime.now().plusDays(60)
         );
 
         Event earlierEvent = createEvent(
                 "TICKET-EVENT-EARLIER",
                 venue,
-                LocalDate.now().plusDays(20)
+                LocalDateTime.now().plusDays(20)
         );
 
         ticketRepository.save(
@@ -168,7 +169,7 @@ class TicketRepositoryIT {
 
         List<Ticket> results =
                 ticketRepository.findByEventEventDateAfterOrderByEventEventDateAsc(
-                        LocalDate.now()
+                        LocalDateTime.now()
                 );
 
         assertEquals(2, results.size());
@@ -212,7 +213,7 @@ class TicketRepositoryIT {
     private Event createEvent(
             String eventCode,
             Venue venue,
-            LocalDate eventDate
+            LocalDateTime eventDate
     ) {
 
         Event event = new Event();
@@ -253,7 +254,7 @@ class TicketRepositoryIT {
         User user = createUser("ticket-duplicate-user", "ticket-duplicate@test.com");
         Venue venue = createVenue("VEN-TICKET-DUPLICATE");
         Event event = createEvent(
-                "TICKET-EVENT-DUPLICATE", venue, LocalDate.now().plusDays(25));
+                "TICKET-EVENT-DUPLICATE", venue, LocalDateTime.now().plusDays(25));
 
         ticketRepository.saveAndFlush(createTicket(
                 "TICKET-CODE-DUPLICATE", user, event, TicketStatus.PAID));
@@ -268,7 +269,7 @@ class TicketRepositoryIT {
         User user = createUser("ticket-query-user", "ticket-query@test.com");
         Venue venue = createVenue("VEN-TICKET-QUERY");
         Event event = createEvent(
-                "TICKET-EVENT-QUERY", venue, LocalDate.now().plusDays(25));
+                "TICKET-EVENT-QUERY", venue, LocalDateTime.now().plusDays(25));
 
         ticketRepository.save(createTicket(
                 "TICKET-QUERY-PAID-1", user, event, TicketStatus.PAID));
@@ -291,7 +292,7 @@ class TicketRepositoryIT {
         User user = createUser("ticket-negative-price-user", "ticket-negative-price@test.com");
         Venue venue = createVenue("VEN-TICKET-NEG-PRICE");
         Event event = createEvent(
-                "TICKET-EVENT-NEG-PRICE", venue, LocalDate.now().plusDays(25));
+                "TICKET-EVENT-NEG-PRICE", venue, LocalDateTime.now().plusDays(25));
 
         Ticket invalid = createTicket(
                 "TICKET-NEGATIVE-PRICE", user, event, TicketStatus.PAID);

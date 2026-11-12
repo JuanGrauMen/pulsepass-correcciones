@@ -18,7 +18,7 @@ import com.pulsepass.service.EventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -56,7 +56,7 @@ public class EventServiceImpl implements EventService {
             );
         }
 
-        if (!request.eventDate().toLocalDate().isAfter(LocalDate.now())) {
+        if (!request.eventDate().isAfter(LocalDateTime.now())) {
             throw new BusinessRuleException(
                     "Event date must be in the future"
             );
@@ -80,7 +80,7 @@ public class EventServiceImpl implements EventService {
         event.setDescription(request.description());
         event.setCategory(request.category());
         event.setStatus(EventStatus.DRAFT);
-        event.setEventDate(request.eventDate().toLocalDate());
+        event.setEventDate(request.eventDate());
         event.setMinimumAge(request.minimumAge());
         event.setVenue(venue);
 
@@ -127,7 +127,7 @@ public class EventServiceImpl implements EventService {
             );
         }
 
-        if (!event.getEventDate().isAfter(LocalDate.now())) {
+        if (!event.getEventDate().isAfter(LocalDateTime.now())) {
             throw new BusinessRuleException(
                     "Event date must be in the future"
             );
@@ -188,11 +188,14 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public List<EventSummaryResponse> findByArtist(String stageName) {
+        return eventRepository.findByArtistStageName(stageName).stream()
+                .map(eventMapper::toSummary).toList();
+    }
 
-        return eventRepository
-                .findByArtistStageName(stageName)
-                .stream()
-                .map(eventMapper::toSummary)
-                .toList();
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventSummaryResponse> findPublishedByArtist(String stageName) {
+        return eventRepository.findByArtistStageNameAndStatus(stageName, EventStatus.PUBLISHED)
+                .stream().map(eventMapper::toSummary).toList();
     }
 }

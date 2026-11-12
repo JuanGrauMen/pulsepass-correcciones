@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 
 import org.mockito.Mock;
@@ -392,7 +393,7 @@ class EventServiceImplTest {
 
         event.setStatus(EventStatus.DRAFT);
 
-        event.setEventDate(LocalDate.now().plusDays(2));
+        event.setEventDate(LocalDateTime.now().plusDays(2));
 
         Venue venue = new Venue();
 
@@ -442,7 +443,7 @@ class EventServiceImplTest {
 
         event.setStatus(EventStatus.CANCELLED);
 
-        event.setEventDate(LocalDate.now().plusDays(2));
+        event.setEventDate(LocalDateTime.now().plusDays(2));
 
         when(eventRepository.findByEventCode("EV-1"))
 
@@ -616,7 +617,7 @@ class EventServiceImplTest {
         Event event = new Event();
         event.setEventCode("EV-PAST");
         event.setStatus(EventStatus.DRAFT);
-        event.setEventDate(LocalDate.now().minusDays(1));
+        event.setEventDate(LocalDateTime.now().minusDays(1));
 
         Venue venue = new Venue();
         venue.setActive(true);
@@ -636,7 +637,7 @@ class EventServiceImplTest {
         Event event = new Event();
         event.setEventCode("EV-INACTIVE-VENUE");
         event.setStatus(EventStatus.DRAFT);
-        event.setEventDate(LocalDate.now().plusDays(5));
+        event.setEventDate(LocalDateTime.now().plusDays(5));
 
         Venue venue = new Venue();
         venue.setActive(false);
@@ -649,6 +650,62 @@ class EventServiceImplTest {
                 .hasMessageContaining("active");
 
         verify(eventRepository, never()).save(any());
+    }
+
+    // ---------- La hora del evento cuenta, no solo el dia ----------
+
+    private CreateEventRequest requestOn(LocalDateTime eventDate) {
+        return new CreateEventRequest(
+                "EV-TODAY", "Concert", "desc", EventCategory.MUSIC, eventDate, 0, "VEN-1");
+    }
+
+    @Test
+    void create_shouldAcceptAnEventThatStartsLaterToday() {
+        Venue venue = new Venue();
+        venue.setCode("VEN-1");
+        venue.setActive(true);
+        when(eventRepository.existsByEventCode("EV-TODAY")).thenReturn(false);
+        when(venueRepository.findByCode("VEN-1")).thenReturn(Optional.of(venue));
+        when(eventRepository.save(any(Event.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(eventMapper.toResponse(any(Event.class))).thenReturn(mock(EventResponse.class));
+
+        eventService.create(requestOn(LocalDate.now().atTime(23, 59, 59)));
+
+        ArgumentCaptor<Event> captor = ArgumentCaptor.forClass(Event.class);
+        verify(eventRepository).save(captor.capture());
+        assertThat(captor.getValue().getEventDate().toLocalTime())
+                .as("la hora se conserva al guardar")
+                .isEqualTo(java.time.LocalTime.of(23, 59, 59));
+    }
+
+    @Test
+    void create_shouldRejectAnEventThatAlreadyStartedToday() {
+        when(eventRepository.existsByEventCode("EV-TODAY")).thenReturn(false);
+
+        assertThatThrownBy(() -> eventService.create(
+                requestOn(LocalDate.now().atStartOfDay().plusSeconds(1))))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("future");
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void publish_shouldAcceptAnEventThatStartsLaterToday() {
+        Event event = new Event();
+        event.setEventCode("EV-TODAY");
+        event.setStatus(EventStatus.DRAFT);
+        event.setEventDate(LocalDate.now().atTime(23, 59, 59));
+        Venue venue = new Venue();
+        venue.setActive(true);
+        event.setVenue(venue);
+        when(eventRepository.findByEventCode("EV-TODAY")).thenReturn(Optional.of(event));
+        when(eventRepository.save(event)).thenReturn(event);
+        when(eventMapper.toResponse(event)).thenReturn(mock(EventResponse.class));
+
+        eventService.publish("EV-TODAY");
+
+        assertThat(event.getStatus()).isEqualTo(EventStatus.PUBLISHED);
     }
 
     @Test

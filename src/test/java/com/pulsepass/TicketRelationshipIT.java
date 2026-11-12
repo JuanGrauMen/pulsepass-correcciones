@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -69,7 +70,7 @@ class TicketRelationshipIT {
         event.setName("Ticket Relationship Event");
         event.setCategory(EventCategory.MUSIC);
         event.setStatus(EventStatus.PUBLISHED);
-        event.setEventDate(LocalDate.now().plusDays(50));
+        event.setEventDate(LocalDateTime.now().plusDays(50));
         event.setMinimumAge(18);
         event.setVenue(venue);
 

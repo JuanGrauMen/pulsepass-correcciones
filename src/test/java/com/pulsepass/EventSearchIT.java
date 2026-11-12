@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,7 +60,7 @@ class EventSearchIT {
         event.setName("Test Artist Event");
         event.setCategory(EventCategory.MUSIC);
         event.setStatus(EventStatus.PUBLISHED);
-        event.setEventDate(LocalDate.now().plusDays(30));
+        event.setEventDate(LocalDateTime.now().plusDays(30));
         event.setMinimumAge(18);
         event.setVenue(venue);
         event.getArtists().add(artist);
@@ -100,7 +101,7 @@ class EventSearchIT {
         event.setName("Santa Marta Music Event");
         event.setCategory(EventCategory.MUSIC);
         event.setStatus(EventStatus.PUBLISHED);
-        event.setEventDate(LocalDate.now().plusDays(40));
+        event.setEventDate(LocalDateTime.now().plusDays(40));
         event.setMinimumAge(18);
         event.setVenue(venue);
         event.getArtists().add(artist);
@@ -144,7 +145,7 @@ class EventSearchIT {
         firstEvent.setName("Recommended Event 1");
         firstEvent.setCategory(EventCategory.MUSIC);
         firstEvent.setStatus(EventStatus.PUBLISHED);
-        firstEvent.setEventDate(LocalDate.now().plusDays(20));
+        firstEvent.setEventDate(LocalDateTime.now().plusDays(20));
         firstEvent.setMinimumAge(18);
         firstEvent.setVenue(venue);
         firstEvent.getArtists().add(artist);
@@ -154,7 +155,7 @@ class EventSearchIT {
         secondEvent.setName("Recommended Event 2");
         secondEvent.setCategory(EventCategory.MUSIC);
         secondEvent.setStatus(EventStatus.PUBLISHED);
-        secondEvent.setEventDate(LocalDate.now().plusDays(40));
+        secondEvent.setEventDate(LocalDateTime.now().plusDays(40));
         secondEvent.setMinimumAge(18);
         secondEvent.setVenue(venue);
         secondEvent.getArtists().add(artist);
@@ -165,7 +166,7 @@ class EventSearchIT {
         List<Event> results =
                 eventRepository.findRecommendedEvents(
                         EventStatus.PUBLISHED,
-                        LocalDate.now(),
+                        LocalDateTime.now(),
                         "Santa Marta",
                         "caribbean"
                 );

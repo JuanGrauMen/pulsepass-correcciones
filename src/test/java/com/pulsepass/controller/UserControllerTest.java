@@ -5,8 +5,11 @@ import com.pulsepass.dto.response.UserResponse;
 import com.pulsepass.exception.DuplicateResourceException;
 import com.pulsepass.exception.GlobalExceptionHandler;
 import com.pulsepass.exception.ResourceNotFoundException;
+import com.pulsepass.security.CustomUserDetailsService;
+import com.pulsepass.security.JwtService;
 import com.pulsepass.service.UserService;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -24,10 +27,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(UserController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser(roles = "USER")
 class UserControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    @MockitoBean
+    JwtService jwtService;
+
+    @MockitoBean
+    CustomUserDetailsService customUserDetailsService;
 
     @MockitoBean
     UserService userService;
@@ -40,7 +50,8 @@ class UserControllerTest {
               "lastName":"Diaz",
               "phone":"3000000000",
               "city":"Santa Marta",
-              "birthDate":"2000-01-01"
+              "birthDate":"2000-01-01",
+              "password":"PulsePassTest!2026"
             }
             """;
 
@@ -88,6 +99,45 @@ class UserControllerTest {
 
         verify(userService, never())
                 .register(any(RegisterUserRequest.class));
+    }
+
+    @Test
+    void register_passwordShorterThan12_returns400() throws Exception {
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_USER.replace("PulsePassTest!2026", "Short1!")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.details.password").exists());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void register_passwordOver72Bytes_returns400NotConflict() throws Exception {
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_USER.replace("PulsePassTest!2026", "a".repeat(73))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.details.password").exists());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void register_invalidPasswordWithExistingUsername_returns400BeforeCheckingDuplicates() throws Exception {
+        // Aunque el servicio respondiera "duplicado", la contrasena invalida
+        // debe rechazarse antes de llegar a el: nunca se revela la existencia.
+        when(userService.register(any(RegisterUserRequest.class)))
+                .thenThrow(new DuplicateResourceException("Username already exists"));
+
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_USER.replace("PulsePassTest!2026", "a".repeat(73))))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
     }
 
     @Test
