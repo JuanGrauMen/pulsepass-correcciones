@@ -13,8 +13,4 @@ public interface EventMapper {
     EventResponse toResponse(Event event);
 
     EventSummaryResponse toSummary(Event event);
-
-    default java.time.LocalDateTime map(java.time.LocalDate value) {
-        return value == null ? null : value.atStartOfDay();
-    }
 }

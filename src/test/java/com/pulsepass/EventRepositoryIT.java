@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -34,11 +34,11 @@ class EventRepositoryIT {
         Venue venue = createVenue("VEN-EVENT-ORDER");
 
         Event laterPublished = createEvent(
-                "EV-ORDER-LATER", venue, LocalDate.now().plusDays(30), EventStatus.PUBLISHED);
+                "EV-ORDER-LATER", venue, LocalDateTime.now().plusDays(30), EventStatus.PUBLISHED);
         Event earlierPublished = createEvent(
-                "EV-ORDER-EARLIER", venue, LocalDate.now().plusDays(10), EventStatus.PUBLISHED);
+                "EV-ORDER-EARLIER", venue, LocalDateTime.now().plusDays(10), EventStatus.PUBLISHED);
         Event draft = createEvent(
-                "EV-ORDER-DRAFT", venue, LocalDate.now().plusDays(1), EventStatus.DRAFT);
+                "EV-ORDER-DRAFT", venue, LocalDateTime.now().plusDays(1), EventStatus.DRAFT);
 
         eventRepository.save(laterPublished);
         eventRepository.save(earlierPublished);
@@ -58,9 +58,9 @@ class EventRepositoryIT {
         Venue otherVenue = createVenue("VEN-QUERY-TWO");
 
         Event expected = createEvent(
-                "EV-VENUE-EXPECTED", requestedVenue, LocalDate.now().plusDays(12), EventStatus.PUBLISHED);
+                "EV-VENUE-EXPECTED", requestedVenue, LocalDateTime.now().plusDays(12), EventStatus.PUBLISHED);
         Event excluded = createEvent(
-                "EV-VENUE-EXCLUDED", otherVenue, LocalDate.now().plusDays(13), EventStatus.PUBLISHED);
+                "EV-VENUE-EXCLUDED", otherVenue, LocalDateTime.now().plusDays(13), EventStatus.PUBLISHED);
 
         eventRepository.save(expected);
         eventRepository.save(excluded);
@@ -83,7 +83,7 @@ class EventRepositoryIT {
         return venueRepository.saveAndFlush(venue);
     }
 
-    private Event createEvent(String code, Venue venue, LocalDate date, EventStatus status) {
+    private Event createEvent(String code, Venue venue, LocalDateTime date, EventStatus status) {
         Event event = new Event();
         event.setEventCode(code);
         event.setName("Test Event");
@@ -99,11 +99,11 @@ class EventRepositoryIT {
     void shouldRejectDuplicateEventCode() {
         Venue venue = createVenue("VEN-EVENT-DUPLICATE");
         Event first = createEvent(
-                "EV-CODE-DUPLICATE", venue, LocalDate.now().plusDays(10), EventStatus.DRAFT);
+                "EV-CODE-DUPLICATE", venue, LocalDateTime.now().plusDays(10), EventStatus.DRAFT);
         eventRepository.saveAndFlush(first);
 
         Event duplicate = createEvent(
-                "EV-CODE-DUPLICATE", venue, LocalDate.now().plusDays(15), EventStatus.PUBLISHED);
+                "EV-CODE-DUPLICATE", venue, LocalDateTime.now().plusDays(15), EventStatus.PUBLISHED);
 
         assertThrows(DataIntegrityViolationException.class,
                 () -> eventRepository.saveAndFlush(duplicate));
@@ -113,7 +113,7 @@ class EventRepositoryIT {
     void shouldRejectNegativeMinimumAge() {
         Venue venue = createVenue("VEN-EVENT-AGE-CHECK");
         Event invalid = createEvent(
-                "EV-NEGATIVE-AGE", venue, LocalDate.now().plusDays(10), EventStatus.DRAFT);
+                "EV-NEGATIVE-AGE", venue, LocalDateTime.now().plusDays(10), EventStatus.DRAFT);
         invalid.setMinimumAge(-1);
 
         assertThrows(DataIntegrityViolationException.class,

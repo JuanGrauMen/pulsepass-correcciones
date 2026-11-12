@@ -16,7 +16,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByUserEmailIgnoreCaseAndStatus(String email, TicketStatus status);
     List<Ticket> findByEventEventCodeAndStatus(String eventCode, TicketStatus status);
     long countByEventEventCodeAndStatus(String eventCode, TicketStatus status);
-    List<Ticket> findByEventEventDateAfterOrderByEventEventDateAsc(java.time.LocalDate fromDate);
+    List<Ticket> findByEventEventDateAfterOrderByEventEventDateAsc(java.time.LocalDateTime fromDate);
 
     @Query("""
     SELECT COUNT(t)

@@ -44,6 +44,7 @@ import javax.crypto.SecretKey;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Date;
 import java.util.stream.Stream;
@@ -474,7 +475,7 @@ class SecurityIT {
         event.setDescription("Evento de pruebas de seguridad");
         event.setCategory(EventCategory.MUSIC);
         event.setStatus(status);
-        event.setEventDate(LocalDate.now().plusDays(30));
+        event.setEventDate(LocalDateTime.now().plusDays(30));
         event.setMinimumAge(0);
         event.setVenue(venue);
         return event;

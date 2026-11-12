@@ -107,6 +107,7 @@ Flyway es el único responsable del esquema. Las migraciones están en `src/main
 | V4 | `V4__enforce_domain_integrity.sql` | Restricciones `CHECK` de categorías y estados, edad mínima no negativa, e índice único sobre `LOWER(email)`. |
 | V5 | `V5__security_credentials_roles.sql` | Crea `user_credentials` (hash de contraseña) y `user_roles` (`USER`, `STAFF`, `ADMIN`). |
 | V6 | `V6__artist_stage_name_case_insensitive_unique.sql` | Índice único sobre `LOWER(stage_name)`: el nombre artístico no distingue mayúsculas. |
+| V7 | `V7__event_date_with_time.sql` | `events.event_date` pasa de `DATE` a `TIMESTAMP`: el evento guarda fecha y hora. Los eventos existentes quedan a las 00:00. |
 
 `FlywayMigrationIT` aplica todas las migraciones sobre una base PostgreSQL vacía y comprueba que las reglas de integridad existen y que la base rechaza, por ejemplo, un evento con una categoría no admitida.
 
@@ -213,7 +214,7 @@ Campos clave de cada entidad (los detalles están en `V1__create_schema.sql`):
 | Entidad | Campos principales |
 |---|---|
 | `Venue` | `code` (único), `name`, `city`, `address`, `capacity` (> 0), `active` |
-| `Event` | `eventCode` (único), `name`, `description`, `category`, `status`, `eventDate`, `minimumAge`, `streamingUrl` (opcional), `venue` |
+| `Event` | `eventCode` (único), `name`, `description`, `category`, `status`, `eventDate` (fecha y hora), `minimumAge`, `streamingUrl` (opcional), `venue` |
 | `Artist` | `stageName` (único sin distinguir mayúsculas), `country`, `genre`, `active` |
 | `User` | `username` (único), `email` (único sin distinguir mayúsculas), `active`; sus datos personales viven en `UserProfile` |
 | `Ticket` | `ticketCode` (único), `type`, `price` (≥ 0), `status`, `purchaseDate`, `user`, `event` |

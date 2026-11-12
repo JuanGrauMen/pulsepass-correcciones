@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +57,7 @@ class RepositoryQueriesIT {
         event.setName("Evento de consultas");
         event.setCategory(EventCategory.MUSIC);
         event.setStatus(EventStatus.PUBLISHED);
-        event.setEventDate(LocalDate.now().plusDays(10));
+        event.setEventDate(LocalDateTime.now().plusDays(10));
         event.setMinimumAge(0);
         event.setVenue(zeta);
         eventRepository.saveAndFlush(event);

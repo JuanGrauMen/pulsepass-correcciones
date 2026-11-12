@@ -29,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -99,7 +100,7 @@ class TicketServiceImplTest {
     @EnumSource(value = EventStatus.class, names = {"DRAFT", "SOLD_OUT", "CANCELLED", "FINISHED"})
     void purchase_shouldRejectWhenEventIsNotPublished(EventStatus status) {
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user(true, null)));
-        when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event(status, 10, LocalDate.now().plusDays(10))));
+        when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event(status, 10, LocalDateTime.now().plusDays(10))));
 
         assertThatThrownBy(() -> ticketService.purchase(request(TicketType.GENERAL)))
                 .isInstanceOf(BusinessRuleException.class)
@@ -112,7 +113,7 @@ class TicketServiceImplTest {
     void purchase_shouldRejectWhenEventDateIsInPast() {
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user(true, null)));
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event(
-                EventStatus.PUBLISHED, 10, LocalDate.now().minusDays(1))));
+                EventStatus.PUBLISHED, 10, LocalDateTime.now().minusDays(1))));
 
         assertThatThrownBy(() -> ticketService.purchase(request(TicketType.GENERAL)))
                 .isInstanceOf(BusinessRuleException.class)
@@ -124,7 +125,7 @@ class TicketServiceImplTest {
     @Test
     void purchase_shouldRejectWhenAgeRestrictedEventHasNoBirthDate() {
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user(true, null)));
-        Event event = event(EventStatus.PUBLISHED, 10, LocalDate.now().plusDays(30));
+        Event event = event(EventStatus.PUBLISHED, 10, LocalDateTime.now().plusDays(30));
         event.setMinimumAge(18);
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event));
 
@@ -139,7 +140,7 @@ class TicketServiceImplTest {
     void purchase_shouldRejectWhenUserDoesNotMeetMinimumAge() {
         User user = user(true, LocalDate.now().minusYears(16));
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user));
-        Event event = event(EventStatus.PUBLISHED, 10, LocalDate.now().plusDays(30));
+        Event event = event(EventStatus.PUBLISHED, 10, LocalDateTime.now().plusDays(30));
         event.setMinimumAge(18);
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event));
 
@@ -153,7 +154,7 @@ class TicketServiceImplTest {
     @Test
     void purchase_shouldRejectWhenCapacityIsAlreadyReached() {
         User user = user(true, null);
-        Event event = event(EventStatus.PUBLISHED, 2, LocalDate.now().plusDays(10));
+        Event event = event(EventStatus.PUBLISHED, 2, LocalDateTime.now().plusDays(10));
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user));
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event));
         when(ticketRepository.countByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID)).thenReturn(2L);
@@ -169,7 +170,7 @@ class TicketServiceImplTest {
     @Test
     void purchase_shouldSavePaidTicketAndCalculateGeneralPrice() {
         User user = user(true, null);
-        Event event = event(EventStatus.PUBLISHED, 10, LocalDate.now().plusDays(10));
+        Event event = event(EventStatus.PUBLISHED, 10, LocalDateTime.now().plusDays(10));
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user));
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event));
         when(ticketRepository.countByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID)).thenReturn(0L);
@@ -203,7 +204,7 @@ class TicketServiceImplTest {
     void purchase_shouldApplyPriceForEachTicketType(TicketType type, String expectedPrice) {
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user(true, null)));
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event(
-                EventStatus.PUBLISHED, 100, LocalDate.now().plusDays(10))));
+                EventStatus.PUBLISHED, 100, LocalDateTime.now().plusDays(10))));
         when(ticketRepository.countByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID)).thenReturn(0L);
         when(ticketRepository.save(any(Ticket.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(ticketMapper.toResponse(any(Ticket.class))).thenReturn(response(type, TicketStatus.PAID));
@@ -218,7 +219,7 @@ class TicketServiceImplTest {
     @Test
     void purchase_shouldMarkEventSoldOutWhenLastTicketIsSold() {
         User user = user(true, null);
-        Event event = event(EventStatus.PUBLISHED, 2, LocalDate.now().plusDays(10));
+        Event event = event(EventStatus.PUBLISHED, 2, LocalDateTime.now().plusDays(10));
         when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user));
         when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event));
         when(ticketRepository.countByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID)).thenReturn(1L);
@@ -235,7 +236,7 @@ class TicketServiceImplTest {
 
     @Test
     void findByCode_shouldReturnMappedTicket() {
-        Ticket ticket = ticket(TicketStatus.PAID, LocalDate.now().plusDays(10));
+        Ticket ticket = ticket(TicketStatus.PAID, LocalDateTime.now().plusDays(10));
         TicketResponse response = response(TicketType.GENERAL, TicketStatus.PAID);
         when(ticketRepository.findByTicketCode(TICKET_CODE)).thenReturn(Optional.of(ticket));
         when(ticketMapper.toResponse(ticket)).thenReturn(response);
@@ -253,7 +254,7 @@ class TicketServiceImplTest {
 
     @Test
     void findByUserEmail_shouldReturnMappedTickets() {
-        Ticket ticket = ticket(TicketStatus.PAID, LocalDate.now().plusDays(10));
+        Ticket ticket = ticket(TicketStatus.PAID, LocalDateTime.now().plusDays(10));
         TicketResponse response = response(TicketType.GENERAL, TicketStatus.PAID);
         when(ticketRepository.findByUserEmailIgnoreCaseOrderByPurchaseDateDesc(USER_EMAIL))
                 .thenReturn(List.of(ticket));
@@ -264,7 +265,7 @@ class TicketServiceImplTest {
 
     @Test
     void findPaidTicketsByEvent_shouldReturnMappedTickets() {
-        Ticket ticket = ticket(TicketStatus.PAID, LocalDate.now().plusDays(10));
+        Ticket ticket = ticket(TicketStatus.PAID, LocalDateTime.now().plusDays(10));
         TicketResponse response = response(TicketType.GENERAL, TicketStatus.PAID);
         when(ticketRepository.findByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID))
                 .thenReturn(List.of(ticket));
@@ -275,7 +276,7 @@ class TicketServiceImplTest {
 
     @Test
     void cancel_shouldChangePaidTicketToCancelled() {
-        Ticket ticket = ticket(TicketStatus.PAID, LocalDate.now().plusDays(10));
+        Ticket ticket = ticket(TicketStatus.PAID, LocalDateTime.now().plusDays(10));
         TicketResponse response = response(TicketType.GENERAL, TicketStatus.CANCELLED);
         when(ticketRepository.findByTicketCode(TICKET_CODE)).thenReturn(Optional.of(ticket));
         when(ticketRepository.save(ticket)).thenReturn(ticket);
@@ -290,7 +291,7 @@ class TicketServiceImplTest {
     @EnumSource(value = TicketStatus.class, names = {"RESERVED", "CANCELLED", "USED"})
     void cancel_shouldRejectWhenTicketIsNotPaid(TicketStatus status) {
         when(ticketRepository.findByTicketCode(TICKET_CODE))
-                .thenReturn(Optional.of(ticket(status, LocalDate.now().plusDays(10))));
+                .thenReturn(Optional.of(ticket(status, LocalDateTime.now().plusDays(10))));
 
         assertThatThrownBy(() -> ticketService.cancel(TICKET_CODE))
                 .isInstanceOf(BusinessRuleException.class)
@@ -302,7 +303,7 @@ class TicketServiceImplTest {
     @Test
     void cancel_shouldRejectWhenEventDateHasPassed() {
         when(ticketRepository.findByTicketCode(TICKET_CODE))
-                .thenReturn(Optional.of(ticket(TicketStatus.PAID, LocalDate.now().minusDays(1))));
+                .thenReturn(Optional.of(ticket(TicketStatus.PAID, LocalDateTime.now().minusDays(1))));
 
         assertThatThrownBy(() -> ticketService.cancel(TICKET_CODE))
                 .isInstanceOf(BusinessRuleException.class)
@@ -313,7 +314,7 @@ class TicketServiceImplTest {
 
     @Test
     void markAsUsed_shouldChangePaidTicketToUsed() {
-        Ticket ticket = ticket(TicketStatus.PAID, LocalDate.now().plusDays(10));
+        Ticket ticket = ticket(TicketStatus.PAID, LocalDateTime.now().plusDays(10));
         TicketResponse response = response(TicketType.GENERAL, TicketStatus.USED);
         when(ticketRepository.findByTicketCode(TICKET_CODE)).thenReturn(Optional.of(ticket));
         when(ticketRepository.save(ticket)).thenReturn(ticket);
@@ -328,11 +329,89 @@ class TicketServiceImplTest {
     @EnumSource(value = TicketStatus.class, names = {"RESERVED", "CANCELLED", "USED"})
     void markAsUsed_shouldRejectWhenTicketIsNotPaid(TicketStatus status) {
         when(ticketRepository.findByTicketCode(TICKET_CODE))
-                .thenReturn(Optional.of(ticket(status, LocalDate.now().plusDays(10))));
+                .thenReturn(Optional.of(ticket(status, LocalDateTime.now().plusDays(10))));
 
         assertThatThrownBy(() -> ticketService.markAsUsed(TICKET_CODE))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Only PAID");
+
+        verify(ticketRepository, never()).save(any());
+    }
+
+    // ---------- La hora del evento cuenta, no solo el dia ----------
+
+    private LocalDateTime laterToday() {
+        return LocalDate.now().atTime(23, 59, 59);
+    }
+
+    private LocalDateTime earlierToday() {
+        return LocalDate.now().atStartOfDay().plusSeconds(1);
+    }
+
+    @Test
+    void purchase_shouldAcceptAnEventThatStartsLaterToday() {
+        when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user(true, null)));
+        when(eventRepository.findByEventCode(EVENT_CODE))
+                .thenReturn(Optional.of(event(EventStatus.PUBLISHED, 10, laterToday())));
+        when(ticketRepository.countByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID)).thenReturn(0L);
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ticketMapper.toResponse(any(Ticket.class))).thenReturn(response(TicketType.GENERAL, TicketStatus.PAID));
+
+        ticketService.purchase(request(TicketType.GENERAL));
+
+        verify(ticketRepository).save(any(Ticket.class));
+    }
+
+    @Test
+    void purchase_shouldRejectAnEventThatAlreadyStartedToday() {
+        when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user(true, null)));
+        when(eventRepository.findByEventCode(EVENT_CODE))
+                .thenReturn(Optional.of(event(EventStatus.PUBLISHED, 10, earlierToday())));
+
+        assertThatThrownBy(() -> ticketService.purchase(request(TicketType.GENERAL)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("already occurred");
+
+        verify(ticketRepository, never()).save(any());
+    }
+
+    @Test
+    void purchase_minimumAgeIsMeasuredOnTheDayOfTheEvent() {
+        // Cumple 18 exactamente el dia del evento: ese dia ya tiene 18 anos.
+        User user = user(true, LocalDate.now().minusYears(18));
+        Event event = event(EventStatus.PUBLISHED, 10, laterToday());
+        event.setMinimumAge(18);
+        when(userRepository.findByEmailIgnoreCase(USER_EMAIL)).thenReturn(Optional.of(user));
+        when(eventRepository.findByEventCode(EVENT_CODE)).thenReturn(Optional.of(event));
+        when(ticketRepository.countByEventEventCodeAndStatus(EVENT_CODE, TicketStatus.PAID)).thenReturn(0L);
+        when(ticketRepository.save(any(Ticket.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ticketMapper.toResponse(any(Ticket.class))).thenReturn(response(TicketType.GENERAL, TicketStatus.PAID));
+
+        ticketService.purchase(request(TicketType.GENERAL));
+
+        verify(ticketRepository).save(any(Ticket.class));
+    }
+
+    @Test
+    void cancel_shouldBeAllowedWhileTheEventHasNotStartedYetToday() {
+        Ticket ticket = ticket(TicketStatus.PAID, laterToday());
+        when(ticketRepository.findByTicketCode(TICKET_CODE)).thenReturn(Optional.of(ticket));
+        when(ticketRepository.save(ticket)).thenReturn(ticket);
+        when(ticketMapper.toResponse(ticket)).thenReturn(response(TicketType.GENERAL, TicketStatus.CANCELLED));
+
+        ticketService.cancel(TICKET_CODE);
+
+        assertThat(ticket.getStatus()).isEqualTo(TicketStatus.CANCELLED);
+    }
+
+    @Test
+    void cancel_shouldBeRejectedOnceTheEventHasStartedToday() {
+        when(ticketRepository.findByTicketCode(TICKET_CODE))
+                .thenReturn(Optional.of(ticket(TicketStatus.PAID, earlierToday())));
+
+        assertThatThrownBy(() -> ticketService.cancel(TICKET_CODE))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("after the event date");
 
         verify(ticketRepository, never()).save(any());
     }
@@ -356,7 +435,7 @@ class TicketServiceImplTest {
         return user;
     }
 
-    private Event event(EventStatus status, int capacity, LocalDate eventDate) {
+    private Event event(EventStatus status, int capacity, LocalDateTime eventDate) {
         Venue venue = new Venue();
         venue.setCode("VEN-TEST");
         venue.setName("Venue Test");
@@ -373,7 +452,7 @@ class TicketServiceImplTest {
         return event;
     }
 
-    private Ticket ticket(TicketStatus status, LocalDate eventDate) {
+    private Ticket ticket(TicketStatus status, LocalDateTime eventDate) {
         User user = user(true, null);
         Event event = event(EventStatus.PUBLISHED, 10, eventDate);
         Ticket ticket = new Ticket();

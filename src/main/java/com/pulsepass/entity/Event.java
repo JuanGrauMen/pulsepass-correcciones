@@ -2,7 +2,7 @@ package com.pulsepass.entity;
 
 import com.pulsepass.enums.*;
 import jakarta.persistence.*;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,7 +32,7 @@ public class Event {
     private EventStatus status;
 
     @Column(name="event_date", nullable=false)
-    private LocalDate eventDate;
+    private LocalDateTime eventDate;
     @Column(name="minimum_age", nullable=false)
     private Integer minimumAge;
     @Column(name="streaming_url", length=500)
@@ -70,8 +70,8 @@ public class Event {
     public EventStatus getStatus(){ return status; }
     public void setStatus(EventStatus status){ this.status=status; }
 
-    public LocalDate getEventDate(){ return eventDate; }
-    public void setEventDate(LocalDate eventDate){ this.eventDate=eventDate; }
+    public LocalDateTime getEventDate(){ return eventDate; }
+    public void setEventDate(LocalDateTime eventDate){ this.eventDate=eventDate; }
 
     public Integer getMinimumAge(){ return minimumAge; }
     public void setMinimumAge(Integer minimumAge){ this.minimumAge=minimumAge; }

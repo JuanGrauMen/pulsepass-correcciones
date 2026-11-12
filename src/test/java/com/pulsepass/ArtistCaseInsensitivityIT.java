@@ -17,6 +17,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -53,7 +54,7 @@ class ArtistCaseInsensitivityIT {
         event.setName("Evento de mayusculas");
         event.setCategory(EventCategory.MUSIC);
         event.setStatus(EventStatus.PUBLISHED);
-        event.setEventDate(LocalDate.now().plusDays(10));
+        event.setEventDate(LocalDateTime.now().plusDays(10));
         event.setMinimumAge(0);
         event.setVenue(venue);
         event.getArtists().add(solar);

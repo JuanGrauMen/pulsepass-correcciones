@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,7 +40,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
         ORDER BY e.eventDate ASC
         """)
     List<Event> findRecommendedEvents(@Param("status") EventStatus status,
-                                      @Param("fromDate") LocalDate fromDate,
+                                      @Param("fromDate") LocalDateTime fromDate,
                                       @Param("city") String city,
                                       @Param("artistText") String artistText);
 }
