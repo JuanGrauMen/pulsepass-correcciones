@@ -18,16 +18,16 @@ public interface EventRepository extends JpaRepository<Event, Long> {
 
     @Query("""
         SELECT DISTINCT e FROM Event e JOIN e.artists a
-        WHERE a.stageName = :stageName
+        WHERE LOWER(a.stageName) = LOWER(:stageName)
         """)
     List<Event> findByArtistStageName(@Param("stageName") String stageName);
 
-    @Query("SELECT DISTINCT e FROM Event e JOIN e.artists a WHERE a.stageName = :stageName AND e.status = :status")
+    @Query("SELECT DISTINCT e FROM Event e JOIN e.artists a WHERE LOWER(a.stageName) = LOWER(:stageName) AND e.status = :status")
     List<Event> findByArtistStageNameAndStatus(@Param("stageName") String stageName, @Param("status") EventStatus status);
 
     @Query("""
         SELECT DISTINCT e FROM Event e JOIN e.artists a JOIN e.venue v
-        WHERE v.city = :city AND a.stageName = :stageName
+        WHERE v.city = :city AND LOWER(a.stageName) = LOWER(:stageName)
         """)
     List<Event> findByCityAndArtistStageName(@Param("city") String city,
                                               @Param("stageName") String stageName);
