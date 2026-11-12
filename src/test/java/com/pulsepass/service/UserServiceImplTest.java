@@ -138,4 +138,22 @@ class UserServiceImplTest {
 
         verify(userRepository, never()).save(any(User.class));
     }
+
+    @Test
+    void register_shouldRejectDuplicateEmailIgnoringCase() {
+        when(userRepository.existsByUsername("andrea")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("ANDREA@EMAIL.COM")).thenReturn(true);
+
+        RegisterUserRequest request = new RegisterUserRequest(
+                "andrea", "ANDREA@EMAIL.COM", "Andrea", "Diaz",
+                null, null, LocalDate.now().minusYears(25), "Password1234");
+
+        assertThatThrownBy(() -> userService.register(request))
+                .isInstanceOf(DuplicateResourceException.class)
+                .hasMessageContaining("Email already exists");
+
+        verify(userRepository, never()).save(any());
+        verify(userProfileRepository, never()).save(any());
+    }
+
 }

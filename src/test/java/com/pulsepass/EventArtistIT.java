@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@Transactional
 class EventArtistIT {
 
     @Autowired
@@ -140,4 +143,24 @@ class EventArtistIT {
                 results.get(0).getEventCode()
         );
     }
+
+    @Test
+    void shouldRejectDuplicateArtistStageName() {
+        Artist first = new Artist();
+        first.setStageName("Duplicate Artist Stage Name");
+        first.setCountry("Colombia");
+        first.setGenre("Pop");
+        first.setActive(true);
+        artistRepository.saveAndFlush(first);
+
+        Artist duplicate = new Artist();
+        duplicate.setStageName("Duplicate Artist Stage Name");
+        duplicate.setCountry("Colombia");
+        duplicate.setGenre("Rock");
+        duplicate.setActive(true);
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> artistRepository.saveAndFlush(duplicate));
+    }
+
 }

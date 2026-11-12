@@ -11,6 +11,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -45,6 +46,7 @@ class ArtistControllerTest {
 
         mvc.perform(get("/api/artists/1"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.stageName").value("Solar Beat"));
 
         verify(artistService).findById(1L);
@@ -57,7 +59,9 @@ class ArtistControllerTest {
 
         mvc.perform(get("/api/artists/99"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Artist not found: 99"));
     }
 
     @Test
@@ -69,7 +73,10 @@ class ArtistControllerTest {
         mvc.perform(get("/api/artists/by-stage-name")
                         .param("stageName", "Solar Beat"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.stageName").value("Solar Beat"));
+
+        verify(artistService).findByStageName("Solar Beat");
     }
 
     @Test
@@ -78,8 +85,43 @@ class ArtistControllerTest {
 
         mvc.perform(get("/api/artists/active"))
                 .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$").isArray());
 
         verify(artistService).findActiveArtists();
     }
+
+    @Test
+    void findByStageName_missing_returns404() throws Exception {
+        when(artistService.findByStageName("Unknown Artist"))
+                .thenThrow(new ResourceNotFoundException("Artist not found: Unknown Artist"));
+
+        mvc.perform(get("/api/artists/by-stage-name")
+                        .param("stageName", "Unknown Artist"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    void findById_nonNumericId_returns400() throws Exception {
+        mvc.perform(get("/api/artists/not-a-number"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(400));
+
+        verifyNoInteractions(artistService);
+    }
+
+    @Test
+    void findByStageName_missingRequiredParameter_returns400() throws Exception {
+        mvc.perform(get("/api/artists/by-stage-name"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid request parameters"));
+
+        verifyNoInteractions(artistService);
+    }
+
 }

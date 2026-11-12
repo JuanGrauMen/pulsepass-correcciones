@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@Transactional
 class EventSearchIT {
 
     @Autowired
@@ -35,7 +37,7 @@ class EventSearchIT {
     void shouldFindEventsByArtistStageNameWithoutDuplicates() {
 
         Artist artist = new Artist();
-        artist.setStageName("Solar Beat");
+        artist.setStageName("Solar Beat Prueba");
         artist.setCountry("Colombia");
         artist.setGenre("Electronic");
         artist.setActive(true);
@@ -65,7 +67,7 @@ class EventSearchIT {
         eventRepository.save(event);
 
         List<Event> results =
-                eventRepository.findByArtistStageName("Solar Beat");
+                eventRepository.findByArtistStageName("Solar Beat Prueba");
 
         assertFalse(results.isEmpty());
         assertEquals(1, results.size());
@@ -76,7 +78,7 @@ class EventSearchIT {
     void shouldFindEventsByCityAndArtist() {
 
         Artist artist = new Artist();
-        artist.setStageName("Neon Waves");
+        artist.setStageName("Neon Waves Prueba");
         artist.setCountry("Colombia");
         artist.setGenre("Pop");
         artist.setActive(true);
@@ -108,7 +110,7 @@ class EventSearchIT {
         List<Event> results =
                 eventRepository.findByCityAndArtistStageName(
                         "Santa Marta",
-                        "Neon Waves"
+                        "Neon Waves Prueba"
                 );
 
         assertFalse(results.isEmpty());
@@ -120,7 +122,7 @@ class EventSearchIT {
     void shouldFindRecommendedEventsCaseInsensitiveAndOrdered() {
 
         Artist artist = new Artist();
-        artist.setStageName("Caribbean Sound");
+        artist.setStageName("Caribbean Sound Prueba");
         artist.setCountry("Colombia");
         artist.setGenre("Music");
         artist.setActive(true);

@@ -10,13 +10,13 @@ public class Artist {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable=false, unique=true)
+    @Column(nullable=false, unique=true, length=150)
     private String stageName;
 
-    @Column(nullable=false)
+    @Column(nullable=false, length=100)
     private String country;
 
-    @Column(nullable=false)
+    @Column(nullable=false, length=100)
     private String genre;
 
     @Column(nullable=false)

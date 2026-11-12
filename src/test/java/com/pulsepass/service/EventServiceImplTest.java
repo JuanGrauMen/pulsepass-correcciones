@@ -610,5 +610,84 @@ class EventServiceImplTest {
 
     }
 
+
+    @Test
+    void publish_shouldRejectPastEvent() {
+        Event event = new Event();
+        event.setEventCode("EV-PAST");
+        event.setStatus(EventStatus.DRAFT);
+        event.setEventDate(LocalDate.now().minusDays(1));
+
+        Venue venue = new Venue();
+        venue.setActive(true);
+        event.setVenue(venue);
+
+        when(eventRepository.findByEventCode("EV-PAST")).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.publish("EV-PAST"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("future");
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void publish_shouldRejectWhenVenueIsInactive() {
+        Event event = new Event();
+        event.setEventCode("EV-INACTIVE-VENUE");
+        event.setStatus(EventStatus.DRAFT);
+        event.setEventDate(LocalDate.now().plusDays(5));
+
+        Venue venue = new Venue();
+        venue.setActive(false);
+        event.setVenue(venue);
+
+        when(eventRepository.findByEventCode("EV-INACTIVE-VENUE")).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.publish("EV-INACTIVE-VENUE"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("active");
+
+        verify(eventRepository, never()).save(any());
+    }
+
+    @Test
+    void addArtist_shouldRejectFinishedEvent() {
+        Event event = new Event();
+        event.setEventCode("EV-FINISHED");
+        event.setStatus(EventStatus.FINISHED);
+
+        when(eventRepository.findByEventCode("EV-FINISHED")).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> eventService.addArtist("EV-FINISHED", 1L))
+                .isInstanceOf(BusinessRuleException.class);
+
+        verify(artistRepository, never()).findById(any());
+        verify(eventRepository, never()).save(any());
+    }
+
+
+    @Test
+    void create_shouldRejectNegativeMinimumAge() {
+        when(eventRepository.existsByEventCode("EV-NEGATIVE-AGE")).thenReturn(false);
+
+        CreateEventRequest request = new CreateEventRequest(
+                "EV-NEGATIVE-AGE",
+                "Concert",
+                "desc",
+                EventCategory.MUSIC,
+                LocalDateTime.now().plusDays(10),
+                -1,
+                "VEN-1"
+        );
+
+        assertThatThrownBy(() -> eventService.create(request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("Minimum age");
+
+        verify(venueRepository, never()).findByCode(any());
+        verify(eventRepository, never()).save(any());
+    }
+
 }
 

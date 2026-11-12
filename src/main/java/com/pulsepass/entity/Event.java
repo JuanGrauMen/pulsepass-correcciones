@@ -14,23 +14,28 @@ public class Event {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="event_code", nullable=false, unique=true)
+    @Column(name="event_code", nullable=false, unique=true, length=50)
     private String eventCode;
 
-    @Column(nullable=false)
+    @Column(nullable=false, length=150)
     private String name;
 
     @Column(columnDefinition="TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable=false, length=30)
     private EventCategory category;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable=false, length=30)
     private EventStatus status;
 
+    @Column(name="event_date", nullable=false)
     private LocalDate eventDate;
+    @Column(name="minimum_age", nullable=false)
     private Integer minimumAge;
+    @Column(name="streaming_url", length=500)
     private String streamingUrl;
 
     @ManyToOne

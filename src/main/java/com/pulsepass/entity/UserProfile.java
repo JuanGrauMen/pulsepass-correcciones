@@ -11,13 +11,15 @@ public class UserProfile {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable=false)
+    @Column(nullable=false, length=100)
     private String firstName;
 
-    @Column(nullable=false)
+    @Column(nullable=false, length=100)
     private String lastName;
 
+    @Column(length=30)
     private String phone;
+    @Column(length=100)
     private String city;
     private LocalDate birthDate;
 

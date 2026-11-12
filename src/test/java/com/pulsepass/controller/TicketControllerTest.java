@@ -1,6 +1,9 @@
 package com.pulsepass.controller;
 
 import com.pulsepass.dto.request.PurchaseTicketRequest;
+import com.pulsepass.dto.response.TicketResponse;
+import com.pulsepass.enums.TicketStatus;
+import com.pulsepass.enums.TicketType;
 import com.pulsepass.exception.BusinessRuleException;
 import com.pulsepass.exception.GlobalExceptionHandler;
 import com.pulsepass.exception.ResourceNotFoundException;
@@ -16,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -48,15 +53,32 @@ class TicketControllerTest {
             }
             """;
 
+    private TicketResponse ticketResponse(TicketStatus status) {
+        return new TicketResponse(
+                1L,
+                "TCK-001",
+                TicketType.GENERAL,
+                new BigDecimal("120000.00"),
+                status,
+                LocalDate.of(2026, 10, 17),
+                "andrea@email.com",
+                "CMF-2027",
+                "Caribbean Music Fest"
+        );
+    }
+
     @Test
     void purchase_valid_returns201() throws Exception {
         when(ticketService.purchase(any(PurchaseTicketRequest.class)))
-                .thenReturn(null);
+                .thenReturn(ticketResponse(TicketStatus.PAID));
 
         mvc.perform(post("/api/tickets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(VALID_TICKET))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.ticketCode").value("TCK-001"))
+                .andExpect(jsonPath("$.status").value("PAID"));
 
         verify(ticketService).purchase(any(PurchaseTicketRequest.class));
     }
@@ -70,10 +92,25 @@ class TicketControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalid))
                 .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(400));
 
         verify(ticketService, never())
                 .purchase(any(PurchaseTicketRequest.class));
+    }
+
+    @Test
+    void findByCode_existing_returns200() throws Exception {
+        when(ticketService.findByCode("TCK-001"))
+                .thenReturn(ticketResponse(TicketStatus.PAID));
+
+        mvc.perform(get("/api/tickets/TCK-001"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.ticketCode").value("TCK-001"))
+                .andExpect(jsonPath("$.status").value("PAID"));
+
+        verify(ticketService).findByCode("TCK-001");
     }
 
     @Test
@@ -83,18 +120,37 @@ class TicketControllerTest {
 
         mvc.perform(get("/api/tickets/MISSING"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404));
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Ticket not found: MISSING"));
     }
 
     @Test
     void findByUserEmail_returns200() throws Exception {
         when(ticketService.findByUserEmail("andrea@email.com"))
-                .thenReturn(List.of());
+                .thenReturn(List.of(ticketResponse(TicketStatus.PAID)));
 
         mvc.perform(get("/api/tickets/by-user")
                         .param("email", "andrea@email.com"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$[0].ticketCode").value("TCK-001"));
+
+        verify(ticketService).findByUserEmail("andrea@email.com");
+    }
+
+    @Test
+    void cancel_paidTicket_returns200() throws Exception {
+        when(ticketService.cancel("TCK-001"))
+                .thenReturn(ticketResponse(TicketStatus.CANCELLED));
+
+        mvc.perform(patch("/api/tickets/TCK-001/cancel"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+
+        verify(ticketService).cancel("TCK-001");
     }
 
     @Test
@@ -104,7 +160,22 @@ class TicketControllerTest {
 
         mvc.perform(patch("/api/tickets/TCK-USED/cancel"))
                 .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    @WithMockUser(roles = "STAFF")
+    void markAsUsed_paidTicket_returns200() throws Exception {
+        when(ticketService.markAsUsed("TCK-001"))
+                .thenReturn(ticketResponse(TicketStatus.USED));
+
+        mvc.perform(patch("/api/tickets/TCK-001/use"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value("USED"));
+
+        verify(ticketService).markAsUsed("TCK-001");
     }
 
     @Test
@@ -115,6 +186,19 @@ class TicketControllerTest {
 
         mvc.perform(patch("/api/tickets/TCK-CANCELLED/use"))
                 .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.status").value(409));
     }
+
+    @Test
+    void findByUserEmail_missingRequiredParameter_returns400() throws Exception {
+        mvc.perform(get("/api/tickets/by-user"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid request parameters"));
+
+        verifyNoInteractions(ticketService);
+    }
+
 }

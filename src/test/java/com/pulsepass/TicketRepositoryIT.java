@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@Transactional
 class TicketRepositoryIT {
 
     @Autowired
@@ -244,4 +247,58 @@ class TicketRepositoryIT {
 
         return ticket;
     }
+
+    @Test
+    void shouldRejectDuplicateTicketCode() {
+        User user = createUser("ticket-duplicate-user", "ticket-duplicate@test.com");
+        Venue venue = createVenue("VEN-TICKET-DUPLICATE");
+        Event event = createEvent(
+                "TICKET-EVENT-DUPLICATE", venue, LocalDate.now().plusDays(25));
+
+        ticketRepository.saveAndFlush(createTicket(
+                "TICKET-CODE-DUPLICATE", user, event, TicketStatus.PAID));
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> ticketRepository.saveAndFlush(createTicket(
+                        "TICKET-CODE-DUPLICATE", user, event, TicketStatus.PAID)));
+    }
+
+    @Test
+    void shouldFindTicketsByUserEmailIgnoringCaseAndStatus() {
+        User user = createUser("ticket-query-user", "ticket-query@test.com");
+        Venue venue = createVenue("VEN-TICKET-QUERY");
+        Event event = createEvent(
+                "TICKET-EVENT-QUERY", venue, LocalDate.now().plusDays(25));
+
+        ticketRepository.save(createTicket(
+                "TICKET-QUERY-PAID-1", user, event, TicketStatus.PAID));
+        ticketRepository.save(createTicket(
+                "TICKET-QUERY-PAID-2", user, event, TicketStatus.PAID));
+        ticketRepository.save(createTicket(
+                "TICKET-QUERY-RESERVED", user, event, TicketStatus.RESERVED));
+        ticketRepository.flush();
+
+        List<Ticket> results = ticketRepository.findByUserEmailIgnoreCaseAndStatus(
+                "TICKET-QUERY@TEST.COM", TicketStatus.PAID);
+
+        assertEquals(2, results.size());
+        assertTrue(results.stream().allMatch(ticket -> ticket.getStatus() == TicketStatus.PAID));
+    }
+
+
+    @Test
+    void shouldRejectNegativeTicketPrice() {
+        User user = createUser("ticket-negative-price-user", "ticket-negative-price@test.com");
+        Venue venue = createVenue("VEN-TICKET-NEG-PRICE");
+        Event event = createEvent(
+                "TICKET-EVENT-NEG-PRICE", venue, LocalDate.now().plusDays(25));
+
+        Ticket invalid = createTicket(
+                "TICKET-NEGATIVE-PRICE", user, event, TicketStatus.PAID);
+        invalid.setPrice(new BigDecimal("-1.00"));
+
+        assertThrows(DataIntegrityViolationException.class,
+                () -> ticketRepository.saveAndFlush(invalid));
+    }
+
 }

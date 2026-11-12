@@ -13,18 +13,21 @@ public class Ticket {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="ticket_code", nullable=false, unique=true)
+    @Column(name="ticket_code", nullable=false, unique=true, length=50)
     private String ticketCode;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable=false, length=30)
     private TicketType type;
 
-    @Column(nullable=false)
+    @Column(nullable=false, precision=12, scale=2)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable=false, length=30)
     private TicketStatus status;
 
+    @Column(name="purchase_date", nullable=false)
     private LocalDate purchaseDate;
 
     @ManyToOne
