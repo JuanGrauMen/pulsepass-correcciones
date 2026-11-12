@@ -4,13 +4,18 @@ import com.pulsepass.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -107,6 +112,46 @@ public class GlobalExceptionHandler {
                 "Invalid request parameters",
                 Map.of("request", "A required parameter is missing or has an invalid format")
         );
+    }
+
+    /**
+     * Un usuario autenticado sin el rol requerido (por ejemplo, rechazado por
+     * un @PreAuthorize dentro del controlador) debe recibir 403, no 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex) {
+
+        return build(
+                HttpStatus.FORBIDDEN,
+                "Forbidden",
+                Map.of()
+        );
+    }
+
+    /**
+     * Errores del propio framework con su codigo HTTP definido: ruta
+     * inexistente (404), metodo no admitido (405), tipo de contenido no
+     * admitido (415) y respuesta no negociable (406).
+     */
+    @ExceptionHandler({
+            NoResourceFoundException.class,
+            HttpRequestMethodNotSupportedException.class,
+            HttpMediaTypeNotSupportedException.class,
+            HttpMediaTypeNotAcceptableException.class
+    })
+    public ResponseEntity<ErrorResponse> handleFrameworkHttpErrors(Exception ex) {
+        HttpStatus status = HttpStatus.valueOf(
+                ((org.springframework.web.ErrorResponse) ex).getStatusCode().value());
+
+        String message = switch (status) {
+            case NOT_FOUND -> "Resource not found";
+            case METHOD_NOT_ALLOWED -> "Method not allowed";
+            case UNSUPPORTED_MEDIA_TYPE -> "Unsupported media type";
+            default -> "Not acceptable";
+        };
+
+        return build(status, message, Map.of());
     }
 
     @ExceptionHandler(Exception.class)
