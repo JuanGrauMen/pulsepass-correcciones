@@ -12,12 +12,12 @@
 		<relativePath/>
 	</parent>
 
-	<groupId>com.example</groupId>
+	<groupId>com.pulsepass</groupId>
 	<artifactId>PulsePass</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
 	<name>PulsePass</name>
-	<description>PulsePass</description>
+	<description>API REST de PulsePass: venues, eventos, artistas, usuarios y tickets, con persistencia en PostgreSQL y seguridad JWT.</description>
 
 	<properties>
 		<java.version>21</java.version>
