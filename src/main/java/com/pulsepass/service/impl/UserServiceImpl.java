@@ -15,7 +15,6 @@ import com.pulsepass.repository.UserProfileRepository;
 import com.pulsepass.repository.UserRepository;
 import com.pulsepass.repository.UserRoleRepository;
 import com.pulsepass.service.UserService;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -65,13 +64,8 @@ public class UserServiceImpl implements UserService {
                     "Birth date cannot be in the future.");
         }
 
-        if (request.password() == null
-                || request.password().length() < 12
-                || request.password().getBytes(StandardCharsets.UTF_8).length > 72) {
-            throw new BusinessRuleException(
-                    "Password must contain at least 12 characters "
-                            + "and no more than 72 UTF-8 bytes.");
-        }
+        // La longitud de la contrasena (12 caracteres, 72 bytes UTF-8) se valida
+        // en RegisterUserRequest, antes de llegar aqui y siempre con 400.
 
         User user = new User();
         user.setUsername(request.username());

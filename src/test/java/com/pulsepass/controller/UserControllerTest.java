@@ -102,6 +102,45 @@ class UserControllerTest {
     }
 
     @Test
+    void register_passwordShorterThan12_returns400() throws Exception {
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_USER.replace("PulsePassTest!2026", "Short1!")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.details.password").exists());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void register_passwordOver72Bytes_returns400NotConflict() throws Exception {
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_USER.replace("PulsePassTest!2026", "a".repeat(73))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.details.password").exists());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    void register_invalidPasswordWithExistingUsername_returns400BeforeCheckingDuplicates() throws Exception {
+        // Aunque el servicio respondiera "duplicado", la contrasena invalida
+        // debe rechazarse antes de llegar a el: nunca se revela la existencia.
+        when(userService.register(any(RegisterUserRequest.class)))
+                .thenThrow(new DuplicateResourceException("Username already exists"));
+
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_USER.replace("PulsePassTest!2026", "a".repeat(73))))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
     void register_duplicateUsername_returns409() throws Exception {
         when(userService.register(any(RegisterUserRequest.class)))
                 .thenThrow(new DuplicateResourceException("Username already exists"));
